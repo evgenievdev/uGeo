@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>uGeo Demo</title>
+ 
+	<script type="text/javascript" src="http://code.jquery.com/jquery-latest.min.js"></script>  
+	<script type="text/javascript" src="js/geoData.js"></script> 
+ 
+	<style>
+		
+		body {
+			 
+			font-family: Arial;
+			font-size: 15px;
+			line-height:20px;
+			
+		}
+		
+		.link {
+			display:block;
+			padding:5px;
+			text-decoration:none;
+			color: white;
+			background: #1998d3;
+			cursor:pointer;
+		}
+		.link:hover {
+			background: #6bb032;
+		}
+		
+		.clist_active {
+			
+			display:block;
+			padding:10px;
+			text-decoration:none;
+			color: white;
+			background: #1998d3;
+			cursor:pointer;
+			
+		}
+		.clist_inactive {
+		
+			display:block;
+			padding:10px;
+			text-decoration:none;
+			color: black;
+			background: #ededed;
+			cursor:pointer;
+		}
+		.clist_inactive:hover{
+			
+			/*background: #6bb032;*/
+			
+		}
+		
+		.warning {
+			padding:15px;
+			background:#fae4ae;
+			border:dashed 1px #ffb400;
+			color:#8d6300;
+		}
+		
+		.success { 
+			background:#b6eeb6;
+			border:dashed 1px #11de11;
+			padding:15px;
+			color:#03a303;
+		}
+		
+		.info {
+			background:#cde1f6;
+			border:dashed 1px #0077f0;
+			padding:15px;
+			color:#0352a3;
+		}
+		
+		.error {
+			background:#ffc1c4;
+			border:dashed 1px #ff000c;
+			padding:15px;
+			color:#a70008;
+		}
+		
+	</style>
+	 
+	
+</head>
+<body>
+	 
+	<div id="container" style="width:95%;margin:0pt auto;padding:15px;background:white;">
+		
+		<h1>uGeo Demo</h1>
+		<h3>user coordinates and nearest location finder</h3>
+		<hr style="border-top:0px;border-bottom:dotted 1px black;" />
+		
+		<div class="warning"> 
+			<b style="font-size:20px;">Warning!</b><br/> This library uses the HTML5 Geolocation API. <br/>If using a mobile device make sure location services are on! <b>(Iphone: Settings->Privacy->Location Services->Safari->While Using the App)</b>
+		</div>
+		<br/>
+		<div class="info"> 
+			<b style="font-size:20px;">API Usage</b><br/> 
+			<u>var Instance = new uGeo();</u> - upon creation, world city data is loaded asynchronously (array - access as Instance.wData)<br/><br/>
+			<u>Instance.GetUserLocation( success , fail , unsupported );</u> - using HTML5 geolocation API, looks up the gps coordinates of the device and returns latitude/longitude coordinates (in degrees). 
+			 This function is also asynchronous, therefore it doesn't return anything immediately (unless the geolocation API is not supported by the browser, then it returns false immediately). 
+			<br/> If a geolocation is found, it will be stored in <b>Instance.uLocation</b> with two properties - lat & lon. 
+			<br/> The function has 3 optional paremeters which can be used to invoke functions on successful retrieval of coordinates, failure to retrieve and if geolocation API is not supported by the browser. 
+			<br/> <br/>
+			<u>Instance.FindNearest( Latitude , Longitude , Quantity , MinimumDistance , CountryList );</u> - Finds a set number of worldwide locations based on Lat/Lon given (in degrees) (usually this would be the user's current location returned by the previous function). 
+			This function returns an array. Each index is an object with a reference (index) for the location found which can be linked to the <b>Instance.wData</b> array to retrieve info like City name, Country, Region, Coordinates, etc.<br/>
+			It is also possible to set a minimum distance (in kilometers) when looking for nearby locations. This means, any location closer than the min. dist. will be ignored.
+			<br/>CountryList - specify from which countries to look up locations => array format; CASE SENSITIVE! ( e.g. ["Italy","Germany",...] ). If you don't want specificity, leave parameter empty or just write false.
+			<br/>
+			<u>Instance.FindNearestToUser( UpdateDelay , Quantity , MinimumDistance , CountryList );</u> - Wrapper function for FindNearest. UpdateDelay = how many milliseconds is the update check interval. NOTE! Needs modification - currently used for interface purposes
+		</div>
+		<br/>
+	 
+		<br style="clear:both;"/><br/>
+		
+		 
+		<div style="float:left;padding:15px;">
+			<div style="font-weight:bold;color:#1998d3;">
+				User coordinates: <span id="uGeo_uLocation" style="color:black;"> Loading ... </span>
+			</div><br/>
+			<div style="font-weight:bold;color:#1998d3;">
+				
+				<span style="float:left;margin-right:15px;">Number of Locations: <input type="number" value="5" min="1" max="100" id="uGeo_maxN" style="padding:5.5px;font-weight:bold;font-size:15px;border:solid 1px #1998d3;" /></span>
+				<span style="float:left;margin-right:15px;">Minimum Distance (in km): <input type="number" value="0" min="0" max="20000" id="uGeo_minDist" style="padding:5.5px;font-weight:bold;font-size:15px;border:solid 1px #1998d3;" /></span>
+				<a onclick="findNearby();" style="float:left;display:block;" class="link" > Find Nearby Locations </a>
+				
+				<br style="clear:both;"/><br/><div id="uGeo_Nearest" style="color:black;"></div>
+			</div>
+		</div>
+		<div style="float:left;padding:15px;">
+			<div style="font-weight:bold;color:#1998d3;">
+				Country List Filter: <span style="color:black;"> Click on a country if you wish to include it when looking for nearby locations. By default all countries are included. </span>
+			</div><br/>
+			<div id="uGeo_cList"></div>
+		</div>
+		 <br style="clear:both;"/><br/>
+		<div class="error"> 
+			<b>TODO:</b> <br/>
+			1. Streamline loading process into one (unify asynchronous processes)<br/>
+			2. Improve database format (remove iso2,iso3,province elements from wData)<br/>
+			3. Add range parameter between nearest locations (Instead of returning the next closest, find the next closest over a certain minimum range)<br/>
+			4. Improve FindNearest() performance - cleanup<br/>
+			5. Create continent filter as additional layer on top of the country filter
+		</div>
+		<br/>  
+		
+	</div>
+	 
+	<script>
+		
+		var ctList = [];
+		var Geo = new uGeo();
+		
+		Geo.GetUserLocation( 
+			function(){ 
+				document.getElementById('uGeo_uLocation').innerHTML = "Latitude: "+Geo.uLocation.lat.toFixed(5) + " , Longitude: "+Geo.uLocation.lon.toFixed(5); 
+			} 
+		);
+ 
+		var Check = setInterval(
+			function() {
+				
+				if( Geo.wData.length > 0 ) {
+					
+					document.getElementById('uGeo_cList').innerHTML = '';
+					for( var i=0; i<Geo.cList.length; i++ ) {
+						
+						document.getElementById('uGeo_cList').innerHTML += '<div style="float:left;padding:1px;"><a class="clist_inactive" id="cList_'+i+'" onclick="toggleCountry('+i+')" >'+Geo.cList[i]+'</a></div>';
+						
+						ctList.push( false );
+						
+					}
+					document.getElementById('uGeo_cList').innerHTML += '<br style="clear:both;"/>';
+					
+					clearInterval( Check );
+					
+				}
+				
+			},100
+		);
+		 
+		function toggleCountry( index ) {
+			
+			var cName;
+			if( ctList[ index ] ) {
+				cName = 'clist_inactive';
+			} else {
+				cName = 'clist_active';
+			}
+			
+			document.getElementById('cList_'+index).className = cName;
+			ctList[ index ] = !ctList[ index ];
+			
+		}
+		
+		function findNearby() {
+			
+			var cData = false;
+			if( ctList.length > 0 ) {
+				
+				cData = [];
+				for( var i = 0; i < ctList.length; i++ ) {
+					
+					if( ctList[ i ] ) {
+						cData.push(
+							Geo.cList[ i ]
+						);
+					}
+					
+				}
+				
+			}
+			
+			var maxN = document.getElementById('uGeo_maxN').value;
+			var minDist = document.getElementById('uGeo_minDist').value;
+			
+			Geo.FindNearestToUser( 100 , parseInt(maxN) , parseFloat(minDist) , cData ); 
+			
+		}
+		
+	</script>	
+		
+</body>
+</html>
